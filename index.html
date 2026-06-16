@@ -2,25 +2,65 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Interactivo de Transporte - Arica</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Transporte Arica</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        /* El mapa necesita una altura definida para poder mostrarse en pantalla */
-        #mi_mapa { height: 600px; width: 100%; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-    <h1>Transporte Público Arica</h1>
-    
-    <div id="mi_mapa"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Aquí escribiremos la lógica para inicializar el mapa
-        console.log("¡Entorno configurado y listo para programar!");
-    </script>
+    <div id="map"></div>
+
+    <div id="homePanel" class="home-panel">
+        <div class="header-black-curve">
+            <div class="avatar"></div>
+        </div>
+        <div class="search-form">
+            <select id="lineaSelect">
+                <option value="" disabled selected>Línea ˅</option>
+                <option value="linea5">Línea 5 (Roja)</option>
+                <option value="linea16">Línea 16</option>
+                <option value="colectivo11">Colectivo 11</option>
+            </select>
+            <select id="paradaSelect">
+                <option value="" disabled selected>Parada ˅</option>
+                <option value="uta">UTA</option>
+                <option value="santo_tomas">Santo Tomás</option>
+                <option value="hospital">Hospital</option>
+                <option value="21_mayo">21 de Mayo</option>
+            </select>
+            <button class="btn-arrow" onclick="iniciarRuta()">➔</button>
+        </div>
+    </div>
+
+    <div id="routeHeader" class="route-header hidden">
+        <button class="btn-back" onclick="volverInicio()">❮ <span class="u-icon">U</span> <span id="destinoLabel">Hospital...</span></button>
+    </div>
+
+    <div id="stopsSheet" class="bottom-sheet hidden">
+        <div class="sheet-handle"></div>
+        <div class="tabs">
+            <div class="tab active">Paradas</div>
+            <div class="tab">Línea</div>
+        </div>
+        <div class="stops-container">
+            <ul id="listaParadas">
+                </ul>
+        </div>
+    </div>
+
+    <div class="tarifa-widget">
+        <div class="tarifa-col">
+            <span class="tarifa-label">Diurno</span>
+            <span class="tarifa-precio" id="tDiurno">1000</span>
+        </div>
+        <div class="tarifa-col">
+            <span class="tarifa-label">Nocturno</span>
+            <span class="tarifa-precio" id="tNocturno">1100</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
