@@ -5,7 +5,7 @@ let lineasAgrupadas = {};
 let destinoMarcadorTemp = null;
 let temporizadorBusqueda = null;
 
-// --- 1. CONFIGURACIÓN FIREBASE REAL ---
+// --- 1. CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyDaourUoy1CgLslN9UxO-9DyTz3IjhRVpI",
     authDomain: "linea-map.firebaseapp.com",
@@ -49,9 +49,9 @@ function obtenerTarifaActual(tarifaDia, tarifaNoche) {
     const precioNoche = tarifaNoche || "1300";
 
     if (esNoche) {
-        return `<span class="tarifa-badge noche">🌙 $${precioNoche} (Tarifa Nocturna)</span>`;
+        return `<span class="tarifa-badge noche">🌙 $${precioNoche} (Nocturna)</span>`;
     } else {
-        return `<span class="tarifa-badge dia">☀️ $${precioDia} (Tarifa Diurna)</span>`;
+        return `<span class="tarifa-badge dia">☀️ $${precioDia} (Diurna)</span>`;
     }
 }
 
@@ -88,7 +88,7 @@ function initMap() {
     };
 }
 
-// --- 7. DESCARGA DESDE BASE DE DATOS ---
+// --- 7. DESCARGA DESDE FIREBASE (COLORES INDEPENDIENTES Y FLECHAS CORREGIDAS) ---
 function descargarRutas() {
     db.collection("lineas").get().then((querySnapshot) => {
         lineasAgrupadas = {}; 
@@ -96,10 +96,12 @@ function descargarRutas() {
         querySnapshot.forEach((doc) => {
             const datos = doc.data();
             
-            let isIda = datos.nombre.includes("(Ida)");
-            let isVuelta = datos.nombre.includes("(Vuelta)");
-            let nombreBase = datos.nombre.replace(" (Ida)", "").replace(" (Vuelta)", "").trim();
-
+            let nombreCrudo = datos.nombre || "Sin Nombre";
+            let nombreBase = nombreCrudo.replace(/ \((Ida|Vuelta|ida|vuelta)\)/gi, "").trim();
+            
+            const cIda = datos.color_ida || datos.color || "#1e90ff";
+            const cVuelta = datos.color_vuelta || datos.color || "#ba1a3a";
+            
             if (!lineasAgrupadas[nombreBase]) {
                 lineasAgrupadas[nombreBase] = { 
                     ida: null, 
@@ -109,48 +111,95 @@ function descargarRutas() {
                 };
             }
 
-            const featureData = {
-                "type": "Feature",
-                "properties": { "nombre": datos.nombre, "color": datos.color },
-                "geometry": { "type": "LineString", "coordinates": JSON.parse(datos.coordenadas) }
+            const crearCapaGeoJSON = (coordenadasTexto, tipoDireccion, colorEspecifico) => {
+                if (!coordenadasTexto || coordenadasTexto.trim() === "") return null;
+                try {
+                    const featureData = {
+                        "type": "Feature",
+                        "properties": { "nombre": `${nombreBase} (${tipoDireccion})`, "color": colorEspecifico },
+                        "geometry": { "type": "LineString", "coordinates": JSON.parse(coordenadasTexto) }
+                    };
+                    
+                    let flechas = null;
+
+                    const capa = L.geoJSON(featureData, {
+                        style: { color: colorEspecifico, weight: 6, opacity: 0.85 },
+                        onEachFeature: function (feature, layer) {
+                            flechas = L.polylineDecorator(layer, {
+                                patterns: [
+                                    {
+                                        offset: 25,
+                                        repeat: 80,
+                                        symbol: L.Symbol.arrowHead({
+                                            pixelSize: 14, 
+                                            polygon: true, 
+                                            pathOptions: { 
+                                                stroke: true, 
+                                                color: '#ffffff', 
+                                                fillColor: colorEspecifico, 
+                                                fillOpacity: 1, 
+                                                weight: 2 
+                                            }
+                                        })
+                                    }
+                                ]
+                            });
+                        }
+                    }).bindPopup(`
+                        <div style="text-align:center; font-family: 'Poppins', sans-serif;">
+                            <b>🚕 ${nombreBase} (${tipoDireccion})</b><br><br>
+                            ${obtenerTarifaActual(datos.tarifaDia || 1000, datos.tarifaNoche || 1300)}
+                        </div>
+                    `);
+
+                    return { capa: capa, flechas: flechas, color: colorEspecifico, visible: false, error: false };
+                } catch (error) {
+                    console.error(`Error de parseo en ${nombreBase} (${tipoDireccion}):`, error);
+                    return { error: true };
+                }
             };
-            
-            const capa = L.geoJSON(featureData, {
-                style: { color: datos.color, weight: 6, opacity: 0.85 }
-            }).bindPopup(`
-                <div style="text-align:center; font-family: 'Poppins', sans-serif;">
-                    <b>🚕 ${datos.nombre}</b><br><br>
-                    ${obtenerTarifaActual(datos.tarifaDia || 1000, datos.tarifaNoche || 1300)}
-                </div>
-            `);
 
-            let objRuta = { capa: capa, color: datos.color, visible: false };
+            if (datos.ruta_ida) {
+                lineasAgrupadas[nombreBase].ida = crearCapaGeoJSON(datos.ruta_ida, "Ida", cIda);
+            }
+            if (datos.ruta_vuelta) {
+                lineasAgrupadas[nombreBase].vuelta = crearCapaGeoJSON(datos.ruta_vuelta, "Vuelta", cVuelta);
+            }
 
-            if (isIda) lineasAgrupadas[nombreBase].ida = objRuta;
-            else if (isVuelta) lineasAgrupadas[nombreBase].vuelta = objRuta;
+            if (datos.coordenadas) {
+                let esIda = nombreCrudo.toLowerCase().includes("ida");
+                let esVuelta = nombreCrudo.toLowerCase().includes("vuelta");
+                
+                if (esIda) {
+                    lineasAgrupadas[nombreBase].ida = crearCapaGeoJSON(datos.coordenadas, "Ida", cIda);
+                } else if (esVuelta) {
+                    lineasAgrupadas[nombreBase].vuelta = crearCapaGeoJSON(datos.coordenadas, "Vuelta", cVuelta);
+                }
+            }
         });
 
         renderizarPanel();
 
     }).catch(e => {
         console.error("Error conectando a Firebase:", e);
-        document.getElementById('lines-container').innerHTML = "<p>Error al cargar las rutas.</p>";
+        document.getElementById('lines-container').innerHTML = "<p style='text-align:center;'>Error de enlace con el servidor de datos.</p>";
     });
 }
 
-// --- 8. RENDERIZADO DEL PANEL LATERAL ---
+// --- 8. RENDERIZADO DINÁMICO DE INTERRUPTORES ---
 function renderizarPanel() {
     let html = "";
     let hayLineas = false;
 
     for (const [nombreLinea, infoLinea] of Object.entries(lineasAgrupadas)) {
         hayLineas = true;
-        
         let htmlIda = "";
-        if (infoLinea.ida) {
+        let htmlVuelta = "";
+
+        if (infoLinea.ida && !infoLinea.ida.error) {
             htmlIda = `
             <div class="toggle-row">
-                <span><span class="color-dot" style="background:${infoLinea.ida.color}"></span> Ida</span>
+                <span><span class="color-dot" style="background:${infoLinea.ida.color}"></span> Recorrido Ida</span>
                 <label class="switch">
                   <input type="checkbox" onchange="toggleCapa('${nombreLinea}', 'ida', this.checked)">
                   <span class="slider round ida"></span>
@@ -158,11 +207,10 @@ function renderizarPanel() {
             </div>`;
         }
 
-        let htmlVuelta = "";
-        if (infoLinea.vuelta) {
+        if (infoLinea.vuelta && !infoLinea.vuelta.error) {
             htmlVuelta = `
             <div class="toggle-row">
-                <span><span class="color-dot" style="background:${infoLinea.vuelta.color}"></span> Vuelta</span>
+                <span><span class="color-dot" style="background:${infoLinea.vuelta.color}"></span> Recorrido Vuelta</span>
                 <label class="switch">
                   <input type="checkbox" onchange="toggleCapa('${nombreLinea}', 'vuelta', this.checked)">
                   <span class="slider round vuelta"></span>
@@ -172,37 +220,44 @@ function renderizarPanel() {
 
         let etiquetaTarifa = obtenerTarifaActual(infoLinea.tDia, infoLinea.tNoche);
 
-        html += `
-        <div class="line-card">
-            <h3 class="line-title">🚕 ${nombreLinea}</h3>
-            <div class="tarifa-container">
-                ${etiquetaTarifa}
-            </div>
-            ${htmlIda}
-            ${htmlVuelta}
-        </div>`;
+        if (htmlIda !== "" || htmlVuelta !== "") {
+            html += `
+            <div class="line-card">
+                <h3 class="line-title">🚕 ${nombreLinea}</h3>
+                <div class="tarifa-container">
+                    ${etiquetaTarifa}
+                </div>
+                ${htmlIda}
+                ${htmlVuelta}
+            </div>`;
+        }
     }
 
     if (!hayLineas) {
-        html = "<p style='text-align:center;'>No se encontraron líneas en la base de datos.</p>";
+        html = "<p style='text-align:center; color:#666;'>No se encontraron líneas configuradas.</p>";
     }
 
     document.getElementById('lines-container').innerHTML = html;
 }
 
+// --- 9. INTERRUPTOR DE CAPAS Y FLECHAS ---
 window.toggleCapa = function(nombreBase, direccion, isChecked) {
     let ruta = lineasAgrupadas[nombreBase][direccion];
+    if (!ruta || !ruta.capa) return;
+
     if (isChecked) {
         ruta.capa.addTo(map);
+        if (ruta.flechas) ruta.flechas.addTo(map); 
         ruta.visible = true;
         map.fitBounds(ruta.capa.getBounds(), { padding: [40, 40] });
     } else {
         map.removeLayer(ruta.capa);
+        if (ruta.flechas) map.removeLayer(ruta.flechas); 
         ruta.visible = false;
     }
 }
 
-// --- 9. CONTROL DE PESTAÑAS ---
+// --- 10. CONTROL DE PESTAÑAS ---
 window.cambiarPestana = function(pestana) {
     const tabs = document.querySelectorAll('.tab');
     const contentDestinos = document.getElementById('tab-destinos');
@@ -223,7 +278,7 @@ window.cambiarPestana = function(pestana) {
     }
 }
 
-// --- 10. NAVEGACIÓN A HITOS ---
+// --- 11. NAVEGACIÓN A HITOS EXACTOS ---
 window.irADestino = function(lat, lng, nombre) {
     const ubicacion = L.latLng(lat, lng);
     if (destinoMarcadorTemp) map.removeLayer(destinoMarcadorTemp);
@@ -236,7 +291,7 @@ window.irADestino = function(lat, lng, nombre) {
     toggleSidePanel();
 }
 
-// --- 11. BUSCADOR DINÁMICO CON AUTOCOMPLETADO ---
+// --- 12. BUSCADOR DINÁMICO ---
 window.manejarInputBusqueda = function() {
     const query = document.getElementById('panel-search-input').value.trim();
     const cajaSugerencias = document.getElementById('search-suggestions');
