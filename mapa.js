@@ -334,7 +334,6 @@ window.alternarCapaEspecifica = function(nombreBase, direccion, encender) {
     if (encender) {
         objetoRuta.capa.addTo(map);
         if (objetoRuta.flechas) objetoRuta.flechas.addTo(map);
-        map.fitBounds(objetoRuta.capa.getBounds(), { padding: [40, 40] });
     } else {
         map.removeLayer(objetoRuta.capa);
         if (objetoRuta.flechas) map.removeLayer(objetoRuta.flechas);
