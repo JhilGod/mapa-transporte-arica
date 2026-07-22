@@ -42,6 +42,10 @@ html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Pop
 .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--bg-card, #ffffff); border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); z-index: 1000; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 15px 20px 25px; box-sizing: border-box; }
 .bottom-sheet.active { transform: translateY(0); }
 .sheet-drag-handle { width: 40px; height: 5px; background: #ccc; border-radius: 3px; margin: 0 auto 15px; }
+
+/* NUEVO: FOTO DEL PARADERO EN EL BOTTOM SHEET */
+.sheet-img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
 .sheet-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
 .title-container { flex-grow: 1; }
 .title-container h3 { margin: 0; font-size: 18px; color: var(--text-color, #222); }
@@ -93,3 +97,75 @@ body.dark-theme .line-control-card { border-color: #444; background: #303134; }
 body.dark-theme .sidebar-header, body.dark-theme .sidebar-tabs { border-color: #444; }
 body.dark-theme .tarifa-badge.dia { background-color: #3f3616; color: #ffeb8a; border-color: #665b22; }
 body.dark-theme .tarifa-badge.noche { background-color: #1a365d; color: #90cdf4; border-color: #2a4365; }
+body.dark-theme .sheet-img { opacity: 0.9; } /* Oscurece foto en modo noche */
+
+/* =========================================
+   VENTANAS FLOTANTES (POPUPS) ESTILO WAYNORTE
+   ========================================= */
+.custom-popup .leaflet-popup-content-wrapper { 
+    padding: 0; 
+    overflow: hidden; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+}
+.custom-popup .leaflet-popup-content { 
+    margin: 0; 
+    width: 280px !important; 
+    max-width: 85vw; 
+    font-family: 'Poppins', sans-serif; 
+}
+.popup-img { 
+    width: 100%; 
+    height: 140px; 
+    object-fit: cover; 
+    display: block; 
+}
+.popup-info { 
+    padding: 15px; 
+}
+.popup-info h3 { 
+    font-size: 16px; 
+    color: var(--text-color, #222); 
+    margin: 0; 
+}
+
+/* Contenedor de líneas dentro de la burbuja */
+.contenedor-lineas { 
+    margin-top: 15px; 
+    padding-top: 12px; 
+    border-top: 1px solid #eee; 
+}
+.contenedor-lineas h4 { 
+    margin: 0 0 10px 0; 
+    font-size: 13px; 
+    color: #666; 
+}
+.micro-item { 
+    background: var(--bg-card, #fdfdfd); 
+    padding: 10px; 
+    border-radius: 8px; 
+    margin-bottom: 10px; 
+    border: 1px solid #eee; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+}
+.micro-titulo { 
+    font-size: 13px; 
+    color: var(--text-color, #222); 
+    display: block; 
+    margin-bottom: 10px; 
+}
+.opciones-ruta { 
+    display: flex; 
+    justify-content: space-between; /* Separa Ida a la izquierda y Vuelta a la derecha */
+    align-items: center;
+}
+
+/* Adaptaciones extra para la ventana flotante en Modo Oscuro */
+body.dark-theme .custom-popup .leaflet-popup-content-wrapper,
+body.dark-theme .custom-popup .leaflet-popup-tip {
+    background-color: #303134;
+    color: #e8eaed;
+}
+body.dark-theme .contenedor-lineas { border-color: #444; }
+body.dark-theme .contenedor-lineas h4 { color: #9aa0a6; }
+body.dark-theme .micro-item { background: #3c4043; border-color: #555; }

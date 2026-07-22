@@ -7,7 +7,9 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="mapa.css">
+    
+    <!-- Cache Busting actualizado a v=1.2 para el nuevo diseño -->
+    <link rel="stylesheet" type="text/css" href="mapa.css?v=1.2">
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator/dist/leaflet.polylineDecorator.js"></script>
@@ -19,7 +21,7 @@
     <!-- Pantalla de Login -->
     <div id="login-screen">
         <div class="login-card">
-            <img src="Logo.jpeg" alt="Logo Linea Map" class="logo-img">
+            <img src="Logo.jpg" alt="Logo Linea Map" class="logo-img">
             <h2 class="brand-title">Linea Map</h2>
             <p>Directorio de Taxis Colectivos</p>
             <button onclick="entrarInvitado()" class="btn-invitado">Entrar al Mapa</button>
@@ -67,6 +69,10 @@
     <!-- Tarjeta Inferior Expandible (Bottom Sheet) -->
     <div id="bottom-sheet" class="bottom-sheet hidden">
         <div class="sheet-drag-handle"></div>
+        
+        <!-- Contenedor de la foto del paradero -->
+        <img id="sheet-image" class="sheet-img" src="" alt="Foto del paradero" style="display: none;">
+        
         <div class="sheet-header">
             <button id="btn-star-paradero" class="icon-btn star-btn" onclick="toggleParaderoFavoritoActual()">☆</button>
             <div class="title-container">
@@ -84,6 +90,7 @@
         </div>
     </div>
 
-    <script src="mapa.js"></script>
+    <!-- Cache Busting actualizado a v=1.2 para el nuevo código JS -->
+    <script src="mapa.js?v=1.2"></script>
 </body>
 </html>
